@@ -233,4 +233,16 @@ app.use('/cancel', async (req, res) => {
     }
 })
 
+app.post('/create-payment-intent', async (req, res) => {
+    if (!req?.body?.amount) return { status: 400, message: 'Please specify the amount!!', success: false };
+
+    const paymentIntent = await stripe.paymentIntents.create({
+        amount: req.body.amount,
+        currency: 'usd',
+        automatic_payment_methods: { enabled: true },
+    });
+
+    res.json({ success: true, message: 'Intent created', clientSecret: paymentIntent.client_secret })
+});
+
 app.listen(BE_PORT, () => console.log(`Server is running on port ${BE_PORT}`));

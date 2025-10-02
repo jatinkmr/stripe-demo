@@ -1,11 +1,17 @@
 import axios from 'axios';
 import { useEffect, useState } from "react";
+import StripeCardCheckout from './checkout';
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 
 const API_BASE_URL = process.env.REACT_APP_BE_URL;
+
+const stripe = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 const Product = () => {
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
+    const [clientSecret, setClientSecret] = useState('');
 
     const getProducts = async () => {
         try {
@@ -61,6 +67,28 @@ const Product = () => {
         }
     }
 
+    // Fetch client secret when cart changes
+    useEffect(() => {
+        const fetchClientSecret = async () => {
+            try {
+                const totalPrice = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+                const response = await axios.post(`${API_BASE_URL}/create-payment-intent`, { amount: totalPrice });
+                console.log('response -> ', response);
+                if (response?.data?.success && response?.data?.clientSecret) {
+                    setClientSecret(response?.data?.clientSecret);
+                }
+            } catch (err) {
+                console.log('Unable to fetch the clientSecret', err);
+            }
+        };
+
+        if (cart.length > 0) {
+            fetchClientSecret();
+        } else {
+            setClientSecret('');
+        }
+    }, [cart]);
+
     useEffect(() => {
         getProducts();
     }, []);
@@ -68,6 +96,8 @@ const Product = () => {
     if (products.length === 0) {
         return <div>No Products Found!!</div>;
     }
+
+    const totalPrice = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
     return (
         <div>
@@ -125,9 +155,15 @@ const Product = () => {
                 </>
             ) : null}
 
-            {cart?.length ? <h1>Total Price: {cart.reduce((total, item) => total + item.price * item.quantity, 0)}</h1> : null}
+            {cart?.length ? <h1>Total Price: ${totalPrice}</h1> : null}
 
             {cart?.length ? <button onClick={(ev) => checkoutHandler(ev)}>Stripe Checkout</button> : null}
+
+            {cart?.length && clientSecret ? (
+                <Elements stripe={stripe} options={{ clientSecret }}>
+                    <StripeCardCheckout totalPrice={totalPrice} />
+                </Elements>
+            ) : null}
         </div>
     );
 };
