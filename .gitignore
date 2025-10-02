@@ -28,3 +28,4 @@ yarn-error.log*
 # server logs
 /server/success.log
 /server/cancel.log
+/server/redirect.log

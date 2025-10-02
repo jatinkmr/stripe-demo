@@ -245,4 +245,59 @@ app.post('/create-payment-intent', async (req, res) => {
     res.json({ success: true, message: 'Intent created', clientSecret: paymentIntent.client_secret })
 });
 
+app.get('/redirect', async (req, res) => {
+    const logFilePath = path.join(__dirname, 'redirect.log');
+    const { payment_intent: paymentIntentId, redirect_status: redirectStatus } = req.query;
+
+    // Log the initial request
+    const baseLogEntry = {
+        timestamp: new Date().toISOString(),
+        method: req.method,
+        url: req.originalUrl,
+        headers: req.headers,
+        query: req.query,
+    };
+
+    try {
+        fs.appendFileSync(logFilePath, `${JSON.stringify(baseLogEntry)}\n`);
+
+        if (!paymentIntentId) {
+            console.log('No payment_intent ID in query for /redirect');
+            // Redirect to a generic error page on the frontend if no ID is present
+            return res.redirect(`${process.env.REACT_APP_FE_URL}/payment-status?status=error&message=Missing payment information`);
+        }
+
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        const redirectLog = {
+            logType: 'payment_redirect',
+            timestamp: new Date().toISOString(),
+            redirect_status: redirectStatus,
+            payment_intent_status: paymentIntent.status,
+            payment_intent: paymentIntent,
+        };
+
+        fs.appendFileSync(logFilePath, `${JSON.stringify(redirectLog)}\n`);
+
+        // Instead of redirecting to the frontend, send a simple HTML response
+        // indicating the payment status.
+        switch (paymentIntent.status) {
+            case 'succeeded':
+                res.status(200).send('<h1>Payment Successful!</h1><p>Your payment has been processed successfully.</p>');
+                break;
+            case 'processing':
+                res.status(200).send("<h1>Payment processing.</h1><p>We'll update you when payment is received.</p>");
+                break;
+            default:
+                res.status(400).send(`<h1>Payment failed.</h1><p>Status: ${paymentIntent.status}</p>`);
+                break;
+        }
+    } catch (error) {
+        console.log('Unexpected error handling for redirect', error);
+        fs.appendFileSync(logFilePath, `${JSON.stringify({ logType: 'error', error: error.message, stack: error.stack })}\n`);
+        // Redirect to a generic error page on the frontend
+        return res.status(500).send('<h1>Error</h1><p>An unexpected error occurred while processing your payment.</p>');
+    }
+})
+
 app.listen(BE_PORT, () => console.log(`Server is running on port ${BE_PORT}`));

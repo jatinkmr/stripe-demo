@@ -34,7 +34,7 @@ const StripeCardCheckout = ({ totalPrice }) => {
             const result = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
-                    return_url: 'http://localhost:3001/redirect'
+                    return_url: 'http://localhost:3003/redirect'
                 },
                 redirect: 'always'
             });
