@@ -1,70 +1,104 @@
-# Getting Started with Create React App
+# Stripe Demo
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React-based demo application showcasing Stripe payment integration with a full-stack setup including a frontend for product selection and checkout, and a backend server for handling Stripe sessions and logging.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Product listing and selection
+- Stripe Checkout integration for secure payments
+- Payment success and cancel logging
+- Support for multiple products with quantities
+- Promotion codes support in checkout
+- Express backend with CORS enabled
+- Environment-based configuration
 
-### `npm start`
+## Prerequisites
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js (version 14 or higher)
+- npm or yarn
+- Stripe account with API keys
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation
 
-### `npm test`
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd stripe-demo
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-### `npm run build`
+## Environment Setup
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Create a `.env` file in the root directory with the following variables:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```env
+STRIPE_SECRET_KEY=your_stripe_secret_key_here
+BE_PORT=3003
+REACT_APP_BE_URL=http://localhost:3003
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- `STRIPE_SECRET_KEY`: Your Stripe secret key from the Stripe dashboard.
+- `BE_PORT`: Port for the backend server (default: 5000).
+- `REACT_APP_BE_URL`: Base URL for the backend API.
 
-### `npm run eject`
+## Usage
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. Start the backend server:
+   ```bash
+   npm run dev
+   ```
+   This will start the Express server on the specified port using nodemon for auto-reloading.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. In a new terminal, start the React frontend:
+   ```bash
+   npm start
+   ```
+   This will start the development server on `http://localhost:3000`.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3. Open your browser and navigate to `http://localhost:3000` to interact with the application.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## API Endpoints
 
-## Learn More
+The backend provides the following endpoints:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `GET /products`: Retrieves the list of available products.
+- `POST /create-checkout-session`: Creates a Stripe checkout session with the selected products in the cart.
+  - Body: `{ cart: [{ id: number, quantity: number }] }`
+- `POST /create-payment-intent`: Creates a Stripe payment intent for a specified amount.
+  - Body: `{ amount: number }`
+- `GET /success`: Handles successful payment redirects and logs payment details.
+- `GET /cancel`: Handles canceled payment redirects and logs cancel details.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Project Structure
 
-### Code Splitting
+```
+stripe-demo/
+├── public/
+│   ├── index.html
+│   ├── manifest.json
+│   └── ...
+├── server/
+│   └── server.js          # Express backend server
+├── src/
+│   ├── components/
+│   │   ├── checkout.js    # Checkout component
+│   │   └── product.js     # Product component
+│   ├── App.js             # Main React app
+│   ├── index.js           # React entry point
+│   └── ...
+├── package.json
+├── README.md
+└── .gitignore
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Contributing
 
-### Analyzing the Bundle Size
+Contributions are welcome! Please fork the repository and submit a pull request.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## License
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is licensed under the MIT License.
