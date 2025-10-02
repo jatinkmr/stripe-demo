@@ -35,6 +35,18 @@ app.post('/create-checkout-session', async (req, res) => {
             return res.json({ success: false, message: 'Please add items to the cart!!' });
         }
 
+        // Validate cart items before creating line items
+        for (const item of cart) {
+            const productInfo = products.find(p => p.id === item.id);
+            const quantity = Number(item.quantity);
+            if (!productInfo) {
+                return res.status(400).json({ success: false, message: `Invalid product id: ${item.id}` });
+            }
+            if (!Number.isInteger(quantity) || quantity <= 0) {
+                return res.status(400).json({ success: false, message: `Invalid quantity for product id: ${item.id}` });
+            }
+        }
+
         const line_items = cart.map(product => {
             const productInfo = products.find(p => p.id === product.id);
             console.log('productInfo -> ', productInfo);
@@ -68,7 +80,7 @@ app.post('/create-checkout-session', async (req, res) => {
     }
 });
 
-app.use('/success', async (req, res) => {
+app.get('/success', async (req, res) => {
     const logFilePath = path.join(__dirname, 'success.log');
     const sessionId = req.query.session_id;
 
@@ -155,7 +167,7 @@ app.use('/success', async (req, res) => {
     }
 })
 
-app.use('/cancel', async (req, res) => {
+app.get('/cancel', async (req, res) => {
     const logFilePath = path.join(__dirname, 'cancel.log');
     const sessionId = req.query.session_id;
 
@@ -234,15 +246,23 @@ app.use('/cancel', async (req, res) => {
 })
 
 app.post('/create-payment-intent', async (req, res) => {
-    if (!req?.body?.amount) return { status: 400, message: 'Please specify the amount!!', success: false };
+    try {
+        const amount = Number(req?.body?.amount);
+        if (!Number.isInteger(amount) || amount <= 0) {
+            return res.status(400).json({ success: false, message: 'Please specify a valid amount in cents' });
+        }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-        amount: req.body.amount,
-        currency: 'usd',
-        automatic_payment_methods: { enabled: true },
-    });
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount,
+            currency: 'usd',
+            automatic_payment_methods: { enabled: true },
+        });
 
-    res.json({ success: true, message: 'Intent created', clientSecret: paymentIntent.client_secret })
+        return res.json({ success: true, message: 'Intent created', clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+        console.error('Error creating payment intent:', error);
+        return res.status(500).json({ success: false, message: 'Error creating payment intent', error: error.message });
+    }
 });
 
 app.get('/redirect', async (req, res) => {
